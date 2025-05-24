@@ -1,10 +1,484 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Sample App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive API Dashboard</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <h1>You are calling me from {{ request.environ['REMOTE_ADDR'] }}</h1>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-rocket"></i> Interactive API Dashboard</h1>
+            <p class="subtitle">Multi-API Integration with Interactive Features</p>
+        </header>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <i class="fas fa-globe"></i>
+                <span>Client IP: <strong>{{ client_ip }}</strong></span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-clock"></i>
+                <span>{{ timestamp }}</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-comments"></i>
+                <span>Messages: <strong>{{ total_messages }}</strong></span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-tasks"></i>
+                <span>TODOs: <strong>{{ total_todos }}</strong></span>
+            </div>
+        </div>
+
+        <div class="api-grid">
+            <!-- Weather API Section -->
+            <div class="api-card weather-card">
+                <div class="card-header">
+                    <i class="fas fa-cloud-sun"></i>
+                    <h3>Weather API</h3>
+                    <span class="status-badge {{ weather.status }}">{{ weather.status.replace('_', ' ').title() }}</span>
+                </div>
+                <div class="card-content">
+                    <div class="weather-info">
+                        <div class="temperature">{{ weather.temperature }}°C</div>
+                        <div class="location">{{ weather.city }}</div>
+                        <div class="description">{{ weather.description }}</div>
+                        <div class="weather-details">
+                            <span>💧 Humidity: {{ weather.humidity }}%</span>
+                            <span>💨 Wind: {{ weather.wind_speed }} km/h</span>
+                        </div>
+                        <div class="weather-controls">
+                            <input type="text" id="cityInput" placeholder="Enter city name..." value="London">
+                            <button onclick="getWeather()" class="action-btn">
+                                <i class="fas fa-search"></i> Get Weather
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quote API Section -->
+            <div class="api-card quote-card">
+                <div class="card-header">
+                    <i class="fas fa-quote-left"></i>
+                    <h3>Inspirational Quotes</h3>
+                    <span class="status-badge {{ quote.status }}">{{ quote.status.replace('_', ' ').title() }}</span>
+                </div>
+                <div class="card-content">
+                    <blockquote id="quoteText">
+                        "{{ quote.quote }}"
+                        <footer>— {{ quote.author }}</footer>
+                    </blockquote>
+                    <button onclick="getNewQuote()" class="action-btn">
+                        <i class="fas fa-sync-alt"></i> New Quote
+                    </button>
+                </div>
+            </div>
+
+            <!-- User API Section -->
+            <div class="api-card user-card">
+                <div class="card-header">
+                    <i class="fas fa-user"></i>
+                    <h3>Random User Generator</h3>
+                    <span class="status-badge {{ user.status }}">{{ user.status.replace('_', ' ').title() }}</span>
+                </div>
+                <div class="card-content">
+                    <div class="user-info" id="userInfo">
+                        <div class="user-detail">
+                            <i class="fas fa-user-circle"></i>
+                            <span>{{ user.name }}</span>
+                        </div>
+                        <div class="user-detail">
+                            <i class="fas fa-envelope"></i>
+                            <span>{{ user.email }}</span>
+                        </div>
+                        <div class="user-detail">
+                            <i class="fas fa-building"></i>
+                            <span>{{ user.company }}</span>
+                        </div>
+                        <div class="user-detail">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>{{ user.city }}</span>
+                        </div>
+                        <div class="user-detail">
+                            <i class="fas fa-phone"></i>
+                            <span>{{ user.phone }}</span>
+                        </div>
+                    </div>
+                    <button onclick="generateUser()" class="action-btn">
+                        <i class="fas fa-user-plus"></i> Generate User
+                    </button>
+                </div>
+            </div>
+
+            <!-- Interactive Messages Section -->
+            <div class="api-card message-card">
+                <div class="card-header">
+                    <i class="fas fa-comments"></i>
+                    <h3>Interactive Messages</h3>
+                    <span class="status-badge live-data">Interactive</span>
+                </div>
+                <div class="card-content">
+                    <div class="message-form">
+                        <input type="text" id="authorInput" placeholder="Your name..." maxlength="30">
+                        <textarea id="messageInput" placeholder="Write your message..." rows="3" maxlength="200"></textarea>
+                        <button onclick="postMessage()" class="action-btn">
+                            <i class="fas fa-paper-plane"></i> Post Message
+                        </button>
+                    </div>
+                    <div class="messages-list" id="messagesList">
+                        <div class="loading">Loading messages...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive TODO Section -->
+            <div class="api-card todo-card">
+                <div class="card-header">
+                    <i class="fas fa-tasks"></i>
+                    <h3>Interactive TODO List</h3>
+                    <span class="status-badge live-data">Interactive</span>
+                </div>
+                <div class="card-content">
+                    <div class="todo-form">
+                        <input type="text" id="todoInput" placeholder="Add new task..." maxlength="100">
+                        <button onclick="addTodo()" class="action-btn">
+                            <i class="fas fa-plus"></i> Add Task
+                        </button>
+                    </div>
+                    <div class="todos-list" id="todosList">
+                        <div class="loading">Loading todos...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Requests Log Section -->
+            <div class="api-card log-card">
+                <div class="card-header">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>API Requests Log</h3>
+                    <span class="status-badge live-data">Real-time</span>
+                </div>
+                <div class="card-content">
+                    <div class="log-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ recent_requests|length }}</span>
+                            <span class="stat-label">Recent Requests</span>
+                        </div>
+                    </div>
+                    <div class="requests-log" id="requestsLog">
+                        {% for req in recent_requests %}
+                        <div class="log-entry">
+                            <span class="log-time">{{ req.timestamp }}</span>
+                            <span class="log-api">{{ req.api }}</span>
+                            <span class="log-request">{{ req.request }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button onclick="refreshLog()" class="action-btn">
+                        <i class="fas fa-sync-alt"></i> Refresh Log
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="api-endpoints">
+            <h3><i class="fas fa-code"></i> Interactive API Endpoints</h3>
+            <div class="endpoints-grid">
+                <a href="/api/health" class="endpoint-link" target="_blank">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>Health Check</span>
+                </a>
+                <a href="/api/weather/Paris" class="endpoint-link" target="_blank">
+                    <i class="fas fa-cloud"></i>
+                    <span>Weather API</span>
+                </a>
+                <a href="/api/quote" class="endpoint-link" target="_blank">
+                    <i class="fas fa-quote-right"></i>
+                    <span>Quote API</span>
+                </a>
+                <a href="/api/user" class="endpoint-link" target="_blank">
+                    <i class="fas fa-users"></i>
+                    <span>User Generator</span>
+                </a>
+                <a href="/api/messages" class="endpoint-link" target="_blank">
+                    <i class="fas fa-comments"></i>
+                    <span>Messages API</span>
+                </a>
+                <a href="/api/todos" class="endpoint-link" target="_blank">
+                    <i class="fas fa-tasks"></i>
+                    <span>TODO API</span>
+                </a>
+                <a href="/api/requests-log" class="endpoint-link" target="_blank">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Requests Log</span>
+                </a>
+                <a href="/api/system-info" class="endpoint-link" target="_blank">
+                    <i class="fas fa-server"></i>
+                    <span>System Info</span>
+                </a>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <p><i class="fas fa-cogs"></i> Enhanced Interactive CI/CD Sample Application</p>
+                <p><i class="fas fa-code-branch"></i> Demonstrating Interactive APIs, Real-time Features, and Advanced Testing</p>
+                <button onclick="location.reload()" class="refresh-btn">
+                    <i class="fas fa-sync-alt"></i> Refresh Dashboard
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Weather API interaction
+        async function getWeather() {
+            const city = document.getElementById('cityInput').value.trim();
+            if (!city) return;
+            
+            try {
+                const response = await fetch(`/api/weather/${encodeURIComponent(city)}`);
+                const data = await response.json();
+                
+                // Update weather display
+                const weatherInfo = document.querySelector('.weather-info');
+                weatherInfo.querySelector('.temperature').textContent = `${data.temperature}°C`;
+                weatherInfo.querySelector('.location').textContent = data.city;
+                weatherInfo.querySelector('.description').textContent = data.description;
+                weatherInfo.querySelector('.weather-details').innerHTML = `
+                    <span>💧 Humidity: ${data.humidity}%</span>
+                    <span>💨 Wind: ${data.wind_speed} km/h</span>
+                `;
+            } catch (error) {
+                console.error('Error fetching weather:', error);
+            }
+        }
+
+        // Quote API interaction
+        async function getNewQuote() {
+            try {
+                const response = await fetch('/api/quote');
+                const data = await response.json();
+                
+                document.getElementById('quoteText').innerHTML = `
+                    "${data.quote}"
+                    <footer>— ${data.author}</footer>
+                `;
+            } catch (error) {
+                console.error('Error fetching quote:', error);
+            }
+        }
+
+        // User API interaction
+        async function generateUser() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                
+                document.getElementById('userInfo').innerHTML = `
+                    <div class="user-detail"><i class="fas fa-user-circle"></i><span>${data.name}</span></div>
+                    <div class="user-detail"><i class="fas fa-envelope"></i><span>${data.email}</span></div>
+                    <div class="user-detail"><i class="fas fa-building"></i><span>${data.company}</span></div>
+                    <div class="user-detail"><i class="fas fa-map-marker-alt"></i><span>${data.city}</span></div>
+                    <div class="user-detail"><i class="fas fa-phone"></i><span>${data.phone}</span></div>
+                `;
+            } catch (error) {
+                console.error('Error generating user:', error);
+            }
+        }
+
+        // Messages API interaction
+        async function postMessage() {
+            const author = document.getElementById('authorInput').value.trim() || 'Anonymous';
+            const message = document.getElementById('messageInput').value.trim();
+            
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ author, message })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('messageInput').value = '';
+                    loadMessages();
+                }
+            } catch (error) {
+                console.error('Error posting message:', error);
+            }
+        }
+
+        async function loadMessages() {
+            try {
+                const response = await fetch('/api/messages');
+                const data = await response.json();
+                
+                const messagesList = document.getElementById('messagesList');
+                if (data.messages.length === 0) {
+                    messagesList.innerHTML = '<div class="no-data">No messages yet. Be the first to post!</div>';
+                } else {
+                    messagesList.innerHTML = data.messages.map(msg => `
+                        <div class="message-item">
+                            <strong>${msg.author}</strong>
+                            <span class="message-time">${msg.timestamp}</span>
+                            <div class="message-text">${msg.message}</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+        // TODO API interaction
+        async function addTodo() {
+            const task = document.getElementById('todoInput').value.trim();
+            
+            if (!task) {
+                alert('Please enter a task');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/todos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('todoInput').value = '';
+                    loadTodos();
+                }
+            } catch (error) {
+                console.error('Error adding todo:', error);
+            }
+        }
+
+        async function toggleTodo(id) {
+            try {
+                const response = await fetch('/api/todos', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                
+                if (response.ok) {
+                    loadTodos();
+                }
+            } catch (error) {
+                console.error('Error toggling todo:', error);
+            }
+        }
+
+        async function deleteTodo(id) {
+            try {
+                const response = await fetch('/api/todos', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                
+                if (response.ok) {
+                    loadTodos();
+                }
+            } catch (error) {
+                console.error('Error deleting todo:', error);
+            }
+        }
+
+        async function loadTodos() {
+            try {
+                const response = await fetch('/api/todos');
+                const data = await response.json();
+                
+                const todosList = document.getElementById('todosList');
+                if (data.todos.length === 0) {
+                    todosList.innerHTML = '<div class="no-data">No tasks yet. Add your first task!</div>';
+                } else {
+                    todosList.innerHTML = data.todos.map(todo => `
+                        <div class="todo-item ${todo.completed ? 'completed' : ''}">
+                            <div class="todo-content">
+                                <input type="checkbox" ${todo.completed ? 'checked' : ''} 
+                                       onchange="toggleTodo('${todo.id}')">
+                                <span class="todo-text">${todo.task}</span>
+                                <span class="todo-time">${todo.created_at}</span>
+                            </div>
+                            <button onclick="deleteTodo('${todo.id}')" class="delete-btn">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading todos:', error);
+            }
+        }
+
+        // Requests log interaction
+        async function refreshLog() {
+            try {
+                const response = await fetch('/api/requests-log');
+                const data = await response.json();
+                
+                const requestsLog = document.getElementById('requestsLog');
+                if (data.recent_requests.length === 0) {
+                    requestsLog.innerHTML = '<div class="no-data">No requests logged yet.</div>';
+                } else {
+                    requestsLog.innerHTML = data.recent_requests.map(req => `
+                        <div class="log-entry">
+                            <span class="log-time">${req.timestamp}</span>
+                            <span class="log-api">${req.api}</span>
+                            <span class="log-request">${req.request}</span>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error refreshing log:', error);
+            }
+        }
+
+        // Initialize interactive features when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMessages();
+            loadTodos();
+            
+            // Add smooth loading animation
+            const cards = document.querySelectorAll('.api-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+            
+            // Enable Enter key for inputs
+            document.getElementById('cityInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') getWeather();
+            });
+            
+            document.getElementById('messageInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && e.ctrlKey) postMessage();
+            });
+            
+            document.getElementById('todoInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') addTodo();
+            });
+        });
+
+        // Auto-refresh certain sections every 30 seconds
+        setInterval(() => {
+            refreshLog();
+        }, 30000);
+    </script>
 </body>
 </html>
